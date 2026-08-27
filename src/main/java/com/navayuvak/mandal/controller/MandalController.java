@@ -5,7 +5,10 @@ import java.math.BigDecimal;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class MandalController {
@@ -19,6 +22,7 @@ public class MandalController {
     // =========================
     // TEST
     // =========================
+
     @GetMapping("/test")
     @ResponseBody
     public String test() {
@@ -28,39 +32,36 @@ public class MandalController {
     // =========================
     // HOME
     // =========================
+
     @GetMapping("/")
     public String home(Model m) {
 
-        m.addAttribute(
-                "members",
-                db.queryForObject(
-                        "SELECT COUNT(*) FROM members",
-                        Integer.class
-                )
+        Integer members = db.queryForObject(
+                "SELECT COUNT(*) FROM members",
+                Integer.class
         );
 
-        m.addAttribute(
-                "collection",
-                db.queryForObject(
-                        "SELECT COALESCE(SUM(amount),0) FROM collections",
-                        BigDecimal.class
-                )
+        BigDecimal collection = db.queryForObject(
+                "SELECT COALESCE(SUM(amount),0) FROM collections",
+                BigDecimal.class
         );
 
-        m.addAttribute(
-                "expense",
-                db.queryForObject(
-                        "SELECT COALESCE(SUM(amount),0) FROM expenses",
-                        BigDecimal.class
-                )
+        BigDecimal expense = db.queryForObject(
+                "SELECT COALESCE(SUM(amount),0) FROM expenses",
+                BigDecimal.class
         );
+
+        m.addAttribute("members", members);
+        m.addAttribute("collection", collection);
+        m.addAttribute("expense", expense);
 
         return "index";
     }
 
     // =========================
-    // MEMBERS - LIST
+    // MEMBERS
     // =========================
+
     @GetMapping("/members")
     public String members(Model m) {
 
@@ -74,9 +75,6 @@ public class MandalController {
         return "members";
     }
 
-    // =========================
-    // MEMBERS - SAVE
-    // =========================
     @PostMapping("/members/save")
     public String saveMember(
             @RequestParam String name,
@@ -87,22 +85,22 @@ public class MandalController {
 
         db.update(
                 "INSERT INTO members " +
-                "(name, mobile, address, joining_date, role, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "(name,mobile,address,joining_date,role) " +
+                "VALUES (?,?,?,?,?)",
                 name,
                 mobile,
                 address,
                 joiningDate,
-                role,
-                "ACTIVE"
+                role
         );
 
         return "redirect:/members";
     }
 
     // =========================
-    // COLLECTIONS - LIST
+    // COLLECTIONS
     // =========================
+
     @GetMapping("/collections")
     public String collections(Model m) {
 
@@ -119,9 +117,9 @@ public class MandalController {
         m.addAttribute(
                 "members",
                 db.queryForList(
-                        "SELECT id, name " +
+                        "SELECT id,name " +
                         "FROM members " +
-                        "WHERE status = 'ACTIVE' " +
+                        "WHERE status='ACTIVE' " +
                         "ORDER BY name"
                 )
         );
@@ -129,9 +127,6 @@ public class MandalController {
         return "collections";
     }
 
-    // =========================
-    // COLLECTIONS - SAVE
-    // =========================
     @PostMapping("/collections/save")
     public String saveCollection(
             @RequestParam Integer memberId,
@@ -144,9 +139,9 @@ public class MandalController {
 
         db.update(
                 "INSERT INTO collections " +
-                "(member_id, receipt_no, amount, collection_date, " +
-                "payment_mode, purpose, remarks) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(member_id,receipt_no,amount,collection_date," +
+                "payment_mode,purpose,remarks) " +
+                "VALUES (?,?,?,?,?,?,?)",
                 memberId,
                 receiptNo,
                 amount,
@@ -160,8 +155,9 @@ public class MandalController {
     }
 
     // =========================
-    // EXPENSES - LIST
+    // EXPENSES
     // =========================
+
     @GetMapping("/expenses")
     public String expenses(Model m) {
 
@@ -175,9 +171,6 @@ public class MandalController {
         return "expenses";
     }
 
-    // =========================
-    // EXPENSES - SAVE
-    // =========================
     @PostMapping("/expenses/save")
     public String saveExpense(
             @RequestParam String expenseDate,
@@ -190,9 +183,9 @@ public class MandalController {
 
         db.update(
                 "INSERT INTO expenses " +
-                "(expense_date, category, description, amount, " +
-                "paid_to, payment_mode, remarks) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(expense_date,category,description,amount," +
+                "paid_to,payment_mode,remarks) " +
+                "VALUES (?,?,?,?,?,?,?)",
                 expenseDate,
                 category,
                 description,
@@ -208,20 +201,19 @@ public class MandalController {
     // =========================
     // REPORT
     // =========================
+
     @GetMapping("/report")
     public String report(Model m) {
 
-        BigDecimal collection =
-                db.queryForObject(
-                        "SELECT COALESCE(SUM(amount),0) FROM collections",
-                        BigDecimal.class
-                );
+        BigDecimal collection = db.queryForObject(
+                "SELECT COALESCE(SUM(amount),0) FROM collections",
+                BigDecimal.class
+        );
 
-        BigDecimal expense =
-                db.queryForObject(
-                        "SELECT COALESCE(SUM(amount),0) FROM expenses",
-                        BigDecimal.class
-                );
+        BigDecimal expense = db.queryForObject(
+                "SELECT COALESCE(SUM(amount),0) FROM expenses",
+                BigDecimal.class
+        );
 
         BigDecimal balance = collection.subtract(expense);
 
