@@ -1,6 +1,7 @@
 package com.navayuvak.mandal.controller;
 
 import java.math.BigDecimal;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,88 +9,226 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class MandalController {
- private final JdbcTemplate db;
- public MandalController(JdbcTemplate db){this.db=db;}
 
- @GetMapping("/")
- public String home(Model m){
-  m.addAttribute("members",db.queryForObject("SELECT COUNT(*) FROM members",Integer.class));
-  m.addAttribute("collection",db.queryForObject("SELECT COALESCE(SUM(amount),0) FROM collections",BigDecimal.class));
-  m.addAttribute("expense",db.queryForObject("SELECT COALESCE(SUM(amount),0) FROM expenses",BigDecimal.class));
-  return "index";
- }
+    private final JdbcTemplate db;
 
- @GetMapping("/members")
- public String members(Model m){
-  m.addAttribute("members",db.queryForList("SELECT * FROM members ORDER BY id DESC"));
-  return "members";
- }
+    public MandalController(JdbcTemplate db) {
+        this.db = db;
+    }
 
- @PostMapping("/members/save")
- public String saveMember(@RequestParam String name,@RequestParam String mobile,
-  @RequestParam String address,@RequestParam String joiningDate,@RequestParam String role){
-  db.update("INSERT INTO members(name,mobile,address,joining_date,role) VALUES(?,?,?,?,?)",
-   name,mobile,address,joiningDate,role);
-  return "redirect:/members";
- }
+    // =========================
+    // TEST
+    // =========================
+    @GetMapping("/test")
+    @ResponseBody
+    public String test() {
+        return "Navayuvak Mitra Mandal is working!";
+    }
 
- @GetMapping("/collections")
- public String collections(Model m){
-  m.addAttribute("collections",db.queryForList(
-   "SELECT c.*,m.name member_name FROM collections c LEFT JOIN members m ON c.member_id=m.id ORDER BY c.id DESC"));
-  m.addAttribute("members",db.queryForList("SELECT id,name FROM members WHERE status='ACTIVE' ORDER BY name"));
-  return "collections";
- }
+    // =========================
+    // HOME
+    // =========================
+    @GetMapping("/")
+    public String home(Model m) {
 
- @PostMapping("/collections/save")
- public String saveCollection(
-         @RequestParam Integer memberId,
-         @RequestParam String receiptNo,
-         @RequestParam BigDecimal amount,
-         @RequestParam String collectionDate,
-         @RequestParam String paymentMode,
-         @RequestParam String purpose,
-         @RequestParam(required = false, defaultValue = "") String remarks) {
+        m.addAttribute(
+                "members",
+                db.queryForObject(
+                        "SELECT COUNT(*) FROM members",
+                        Integer.class
+                )
+        );
 
-     db.update(
-         "INSERT INTO collections(member_id,receipt_no,amount,collection_date,payment_mode,purpose,remarks) VALUES(?,?,?,?,?,?,?)",
-         memberId, receiptNo, amount, collectionDate,
-         paymentMode, purpose, remarks
-     );
+        m.addAttribute(
+                "collection",
+                db.queryForObject(
+                        "SELECT COALESCE(SUM(amount),0) FROM collections",
+                        BigDecimal.class
+                )
+        );
 
-     return "redirect:/collections";
- }
+        m.addAttribute(
+                "expense",
+                db.queryForObject(
+                        "SELECT COALESCE(SUM(amount),0) FROM expenses",
+                        BigDecimal.class
+                )
+        );
 
- @GetMapping("/expenses")
- public String expenses(Model m){
-  m.addAttribute("expenses",db.queryForList("SELECT * FROM expenses ORDER BY id DESC"));
-  return "expenses";
- }
+        return "index";
+    }
 
- @PostMapping("/expenses/save")
- public String saveExpense(
-         @RequestParam String expenseDate,
-         @RequestParam String category,
-         @RequestParam String description,
-         @RequestParam BigDecimal amount,
-         @RequestParam String paidTo,
-         @RequestParam String paymentMode,
-         @RequestParam(required = false, defaultValue = "") String remarks) {
+    // =========================
+    // MEMBERS - LIST
+    // =========================
+    @GetMapping("/members")
+    public String members(Model m) {
 
-     db.update(
-         "INSERT INTO expenses(expense_date,category,description,amount,paid_to,payment_mode,remarks) VALUES(?,?,?,?,?,?,?)",
-         expenseDate, category, description, amount,
-         paidTo, paymentMode, remarks
-     );
+        m.addAttribute(
+                "members",
+                db.queryForList(
+                        "SELECT * FROM members ORDER BY id DESC"
+                )
+        );
 
-     return "redirect:/expenses";
- }
+        return "members";
+    }
 
- @GetMapping("/report")
- public String report(Model m){
-  BigDecimal c=db.queryForObject("SELECT COALESCE(SUM(amount),0) FROM collections",BigDecimal.class);
-  BigDecimal e=db.queryForObject("SELECT COALESCE(SUM(amount),0) FROM expenses",BigDecimal.class);
-  m.addAttribute("collection",c); m.addAttribute("expense",e); m.addAttribute("balance",c.subtract(e));
-  return "report";
- }
+    // =========================
+    // MEMBERS - SAVE
+    // =========================
+    @PostMapping("/members/save")
+    public String saveMember(
+            @RequestParam String name,
+            @RequestParam String mobile,
+            @RequestParam String address,
+            @RequestParam String joiningDate,
+            @RequestParam String role) {
+
+        db.update(
+                "INSERT INTO members " +
+                "(name, mobile, address, joining_date, role, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                name,
+                mobile,
+                address,
+                joiningDate,
+                role,
+                "ACTIVE"
+        );
+
+        return "redirect:/members";
+    }
+
+    // =========================
+    // COLLECTIONS - LIST
+    // =========================
+    @GetMapping("/collections")
+    public String collections(Model m) {
+
+        m.addAttribute(
+                "collections",
+                db.queryForList(
+                        "SELECT c.*, m.name AS member_name " +
+                        "FROM collections c " +
+                        "LEFT JOIN members m ON c.member_id = m.id " +
+                        "ORDER BY c.id DESC"
+                )
+        );
+
+        m.addAttribute(
+                "members",
+                db.queryForList(
+                        "SELECT id, name " +
+                        "FROM members " +
+                        "WHERE status = 'ACTIVE' " +
+                        "ORDER BY name"
+                )
+        );
+
+        return "collections";
+    }
+
+    // =========================
+    // COLLECTIONS - SAVE
+    // =========================
+    @PostMapping("/collections/save")
+    public String saveCollection(
+            @RequestParam Integer memberId,
+            @RequestParam String receiptNo,
+            @RequestParam BigDecimal amount,
+            @RequestParam String collectionDate,
+            @RequestParam String paymentMode,
+            @RequestParam String purpose,
+            @RequestParam(required = false, defaultValue = "") String remarks) {
+
+        db.update(
+                "INSERT INTO collections " +
+                "(member_id, receipt_no, amount, collection_date, " +
+                "payment_mode, purpose, remarks) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                memberId,
+                receiptNo,
+                amount,
+                collectionDate,
+                paymentMode,
+                purpose,
+                remarks
+        );
+
+        return "redirect:/collections";
+    }
+
+    // =========================
+    // EXPENSES - LIST
+    // =========================
+    @GetMapping("/expenses")
+    public String expenses(Model m) {
+
+        m.addAttribute(
+                "expenses",
+                db.queryForList(
+                        "SELECT * FROM expenses ORDER BY id DESC"
+                )
+        );
+
+        return "expenses";
+    }
+
+    // =========================
+    // EXPENSES - SAVE
+    // =========================
+    @PostMapping("/expenses/save")
+    public String saveExpense(
+            @RequestParam String expenseDate,
+            @RequestParam String category,
+            @RequestParam String description,
+            @RequestParam BigDecimal amount,
+            @RequestParam String paidTo,
+            @RequestParam String paymentMode,
+            @RequestParam(required = false, defaultValue = "") String remarks) {
+
+        db.update(
+                "INSERT INTO expenses " +
+                "(expense_date, category, description, amount, " +
+                "paid_to, payment_mode, remarks) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                expenseDate,
+                category,
+                description,
+                amount,
+                paidTo,
+                paymentMode,
+                remarks
+        );
+
+        return "redirect:/expenses";
+    }
+
+    // =========================
+    // REPORT
+    // =========================
+    @GetMapping("/report")
+    public String report(Model m) {
+
+        BigDecimal collection =
+                db.queryForObject(
+                        "SELECT COALESCE(SUM(amount),0) FROM collections",
+                        BigDecimal.class
+                );
+
+        BigDecimal expense =
+                db.queryForObject(
+                        "SELECT COALESCE(SUM(amount),0) FROM expenses",
+                        BigDecimal.class
+                );
+
+        BigDecimal balance = collection.subtract(expense);
+
+        m.addAttribute("collection", collection);
+        m.addAttribute("expense", expense);
+        m.addAttribute("balance", balance);
+
+        return "report";
+    }
 }
