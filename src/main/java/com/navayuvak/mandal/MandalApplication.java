@@ -1,0 +1,9 @@
+package com.navayuvak.mandal;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+@SpringBootApplication
+public class MandalApplication {
+ public static void main(String[] args) {
+  SpringApplication.run(MandalApplication.class,args);
+ }
+}
