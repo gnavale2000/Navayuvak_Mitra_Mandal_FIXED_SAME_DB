@@ -26,7 +26,7 @@ public class MandalController {
     @GetMapping("/test")
     @ResponseBody
     public String test() {
-        return "Navayuvak Mitra Mandal is working!";
+        return "NAVAYUVAK TEST OK - NEW DEPLOYMENT";
     }
 
     // =========================
