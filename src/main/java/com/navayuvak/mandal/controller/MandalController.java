@@ -224,3 +224,13 @@ public class MandalController {
         return "report";
     }
 }
+git add src/main/java/com/navayuvak/mandal/controller/MandalController.java
+
+x
+
+^X
+
+G
+
+
+
