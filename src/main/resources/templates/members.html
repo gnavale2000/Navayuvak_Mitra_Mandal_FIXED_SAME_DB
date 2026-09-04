@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Members</title></head>
+<body>
+    <h1>Members List</h1>
+    <table border="1">
+        <tr><th>ID</th><th>Name</th><th>Mobile</th><th>Role</th></tr>
+        <tr th:each="member : ${members}">
+            <td th:text="${member.id}">1</td>
+            <td th:text="${member.name}">Name</td>
+            <td th:text="${member.mobile}">Mobile</td>
+            <td th:text="${member.role}">Role</td>
+        </tr>
+    </table>
+</body>
+</html>
